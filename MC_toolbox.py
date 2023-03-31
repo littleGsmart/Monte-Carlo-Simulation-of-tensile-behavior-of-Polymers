@@ -1,9 +1,18 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from bisect import bisect_left as bl
 import random as rd
+import json
+import math
 
 sq3 = np.sqrt(3)
 plt.axis('equal')
+with open("dict_600000_10.json", encoding="utf-8") as f:
+    e_dict = json.load(f)
+Tg = 263
+Tm = 433
+Td = 583
+T_environment = 400
 
 
 class hex_coordinate:
@@ -16,27 +25,50 @@ class hex_coordinate:
         y = self.y * sq3 / 2
         return [x, y]
 
+    def around(self, size):
+        around_loaction = [hex_coordinate([self.x + 1, self.y]), hex_coordinate([self.x - 1, self.y]),
+                           hex_coordinate([self.x, self.y + 1]), hex_coordinate([self.x, self.y - 1]),
+                           hex_coordinate([self.x + 1, self.y + 1]), hex_coordinate([self.x - 1, self.y - 1])]
+        pop_locate = []
+        if self.x == size[0] - 1:
+            pop_locate.append(0)
+            pop_locate.append(4)
+        if self.x == 0:
+            pop_locate.append(1)
+            pop_locate.append(5)
+        if self.y == size[1] - 1:
+            pop_locate.append(2)
+            pop_locate.append(4)
+        if self.y == 0:
+            pop_locate.append(3)
+            pop_locate.append(5)
+
+        return np.delete(around_loaction, pop_locate).tolist()
+
+    def distance(self, other):
+        dx = self.x - other.x
+        dy = self.y - other.y
+        x = dx - 0.5 * dy
+        y = dy * sq3 / 2
+        return math.sqrt(x * x + y * y)
+
     def __add__(self, other):
         x = self.x + other.x
         y = self.y + other.y
         ans = hex_coordinate([x, y])
         return ans
 
+    def __sub__(self, other):
+        x = self.x - other.x
+        y = self.y - other.y
+        ans = hex_coordinate([x, y])
+        return ans
 
-# def hex_coor_plot(hex_coor_arr):
-#     plots = np.zeros((len(hex_coor_arr),2))
-#     x = 0
-#     for i in hex_coor_arr:
-#         [plots[x,0],plots[x,1]] = i.Transform_2_Ortho()
-#         x = x + 1
-#     print(plots)
-#     print(plots[:,0])
-#     print(plots[:,1])
-#     plt.plot(plots[:,0],plots[:,1],color = 'gray', linestyle = '-.')
 
 class hex_box:
     def __init__(self, coordinate):
         self.location = coordinate
+        self.content = []
 
     def draw_box(self):
         [x, y] = self.location.Transform_2_Ortho()
@@ -45,12 +77,180 @@ class hex_box:
                  color='gray', linestyle='-.')
         plt.fill([x - 0.5, x, x + 0.5, x + 0.5, x, x - 0.5, x - 0.5],
                  [y + sq3 / 6, y + sq3 / 3, y + sq3 / 6, y - sq3 / 6, y - sq3 / 3, y - sq3 / 6, y + sq3 / 6],
-                 color='gray', alpha = 0.3)
+                 color='gray', alpha=0.3)
 
 
-a = [hex_box(hex_coordinate([0, 0])), hex_box(hex_coordinate([0, 1])), hex_box(hex_coordinate([0, 2])),
-     hex_box(hex_coordinate([1, 0])), hex_box(hex_coordinate([1, 1])), hex_box(hex_coordinate([1, 2])),
-     hex_box(hex_coordinate([2, 0])), hex_box(hex_coordinate([2, 1])), hex_box(hex_coordinate([2, 2]))]
-for i in a:
+class Kuhn:
+    def __init__(self, coordinate):
+        self.location = coordinate
+
+    def grow(self, possible_location):
+        location = int(rd.random() * len(possible_location))
+        location = possible_location[location]
+        return Kuhn(location)
+
+    def __sub__(self, other):
+        return self.location - other.location
+
+
+class System:
+    def __init__(self, size_arr):
+        self.size = size_arr
+        self.boxes = []
+        self.lines = []
+        for i in range(size_arr[0]):
+            temp = []
+            for j in range(size_arr[1]):
+                temp.append(hex_box(hex_coordinate([i, j])))
+            self.boxes.append(temp)
+        self.boxes = np.array(self.boxes)
+
+    def random_locate(self):
+        x = int(rd.random() * self.size[0])
+        y = int(rd.random() * self.size[1])
+        return hex_coordinate([x, y])
+
+    def line_generate(self, DP):
+        length = 0
+        begin_location = self.random_locate()
+        line = []
+        while not line:
+            if len(self.boxes[begin_location.x, begin_location.y].content) <= 2:
+                line.append(Kuhn(begin_location))
+                length = 1
+                self.boxes[begin_location.x, begin_location.y].content.append([len(self.lines), 0])
+
+        while length < DP:
+            around = line[length - 1].location.around(self.size)
+            pop_list = []
+            for i in range(len(around)):
+                if len(self.boxes[around[i].x, around[i].y].content) >= 2:
+                    pop_list.append(i)
+            around = np.delete(around, pop_list)
+            if len(around) == 0:
+                self.lines.append(line)
+                return 1
+            point = (line[length - 1].grow(around))
+            line.append(point)
+            self.boxes[point.location.x, point.location.y].content.append([len(self.lines), length])
+            length = length + 1
+        self.lines.append(line)
+
+    def draw_Lines(self, line_num='all'):
+        draw_shitmontain = np.zeros(self.size)
+        if line_num == 'all':
+            for line in self.lines:
+                X = []
+                Y = []
+                for i in line:
+                    draw_shitmontain[i.location.x, i.location.y] += 1
+                    [x, y] = i.location.Transform_2_Ortho()
+                    if draw_shitmontain[i.location.x, i.location.y] == 2:
+                        x = x - 0.25
+                        y = y + 0.15
+                    X.append(x)
+                    Y.append(y)
+                plt.plot(X, Y, marker='o')
+        else:
+            for j in line_num:
+                X = []
+                Y = []
+                for i in self.lines[j]:
+                    draw_shitmontain[i.location.x, i.location.y] += 1
+                    [x, y] = i.location.Transform_2_Ortho()
+                    if draw_shitmontain[i.location.x, i.location.y] == 2:
+                        x = x - 0.25
+                        y = y + 0.15
+                    X.append(x)
+                    Y.append(y)
+                plt.plot(X, Y, marker='o')
+
+    def rdpoint(self):
+        i = int(rd.random() * len(self.lines))
+        j = int(rd.random() * len(self.lines[i]))
+        return [i, j]
+
+    def point_motive(self, point_num):
+        origin_location = self.lines[point_num[0]][point_num[1]].location
+        directions = origin_location.around(self.size)
+        target_location = directions[int(rd.random() * len(directions))]
+        rd_energy = e_dict[0][bl(e_dict[1], rd.random())]
+
+        energy_g = n_g_arr[len(self.boxes[target_location.x][target_location.y].content)] * Tg
+        # energy_m
+        direction_1 = []
+        energy_m = 0
+        for i in origin_location.around(self.size):
+            box = self.boxes[i.x,i.y]
+            if box.content:
+                for point in box.content:
+                    if point[1] == 0:
+                        direction_1.append(self.lines[point[0]][point[1]] - self.lines[point[0]][point[1]+1])
+                    elif point[1] == (len(self.lines[point[0]])-1):
+                        direction_1.append(self.lines[point[0]][point[1]] - self.lines[point[0]][point[1]-1])
+                    else:
+                        direction_1.append(self.lines[point[0]][point[1]] - self.lines[point[0]][point[1]+1])
+                        direction_1.append(self.lines[point[0]][point[1]] - self.lines[point[0]][point[1]-1])
+
+        if point_num[1] == 0:
+            latter_location = self.lines[point_num[0]][point_num[1] + 1].location
+            direction_00 = origin_location - latter_location
+            if direction_00 in direction_1:
+                energy_m = Tm
+        elif point_num[1] == (len(self.lines[point_num[0]]) - 1):
+            former_location = self.lines[point_num[0]][point_num[1] - 1].location
+            direction_01 = origin_location - former_location
+            if direction_01 in direction_1:
+                energy_m = Tm
+
+        else:
+            latter_location = self.lines[point_num[0]][point_num[1] + 1].location
+            former_location = self.lines[point_num[0]][point_num[1] - 1].location
+            direction_00 = origin_location - latter_location
+            direction_01 = origin_location - former_location
+            if (direction_00 in direction_1) or (direction_01 in direction_1):
+                energy_m = Tm
+
+
+
+        # energy_d
+        if point_num[1] == 0:
+            latter_location = self.lines[point_num[0]][point_num[1] + 1].location
+            d_distance = target_location.distance(latter_location) - origin_location.distance(latter_location)
+            energy_d = d_distance * Td
+        elif point_num[1] == (len(self.lines[point_num[0]]) - 1):
+            former_location = self.lines[point_num[0]][point_num[1] - 1].location
+            d_distance = target_location.distance(former_location) - origin_location.distance(former_location)
+            energy_d = d_distance * Td
+        else:
+            latter_location = self.lines[point_num[0]][point_num[1] + 1].location
+            former_location = self.lines[point_num[0]][point_num[1] - 1].location
+            d_distance = target_location.distance(latter_location) - origin_location.distance(
+                latter_location) + target_location.distance(former_location) - origin_location.distance(former_location)
+            energy_d = d_distance * Td
+
+        blocking_energy = energy_m + energy_d + energy_g
+        if rd_energy > blocking_energy:
+            self.lines[point_num[0]][point_num[1]].location = target_location
+            self.boxes[origin_location.x][origin_location.y].content.remove(point_num)
+            self.boxes[target_location.x][target_location.y].content.append(point_num)
+
+
+
+a = System([12, 20])
+n_g_arr = [0, 1, 1e8,1e8,1e8,1e8,1e8]
+for i in a.boxes.flatten():
     i.draw_box()
+for i in range(1):
+    a.line_generate(50)
+
+a.draw_Lines()
+plt.show()
+for i in a.boxes.flatten():
+    i.draw_box()
+
+for i in range(10000):
+    a.point_motive(a.rdpoint())
+
+a.draw_Lines()
 plt.show()

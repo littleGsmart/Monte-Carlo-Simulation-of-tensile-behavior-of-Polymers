@@ -1,2 +1,7 @@
 import MC_toolbox as mc
-mc.plt.show()
+
+# PP
+Tg = 263
+Tm = 433
+Td = 583
+T_environment = 300
