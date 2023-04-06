@@ -140,6 +140,8 @@ class System:
             length = length + 1
         self.lines.append(line)
 
+        return 0
+
     def draw_Lines(self, line_num='all'):
         draw_shitmontain = np.zeros(self.size)
         if line_num == 'all':
@@ -222,17 +224,17 @@ class System:
         # energy_d
         if point_num[1] == 0:
             latter_location = self.lines[point_num[0]][point_num[1] + 1].location
-            d_distance = target_location.distance(latter_location) - origin_location.distance(latter_location)
+            d_distance = 0.5 * (pow(target_location.distance(latter_location),2) - pow(origin_location.distance(latter_location),2))
             energy_d = d_distance * Td
         elif point_num[1] == (len(self.lines[point_num[0]]) - 1):
             former_location = self.lines[point_num[0]][point_num[1] - 1].location
-            d_distance = target_location.distance(former_location) - origin_location.distance(former_location)
+            d_distance = 0.5 * (pow(target_location.distance(former_location),2) - pow(origin_location.distance(former_location),2))
             energy_d = d_distance * Td
         else:
             latter_location = self.lines[point_num[0]][point_num[1] + 1].location
             former_location = self.lines[point_num[0]][point_num[1] - 1].location
-            d_distance = target_location.distance(latter_location) - origin_location.distance(
-                latter_location) + target_location.distance(former_location) - origin_location.distance(former_location)
+            d_distance = 0.5 * (pow(target_location.distance(latter_location),2) - pow(origin_location.distance(
+                latter_location),2) + pow(target_location.distance(former_location),2) - pow(origin_location.distance(former_location),2))
             energy_d = d_distance * Td
 
         blocking_energy = energy_m + energy_d + energy_g
@@ -240,6 +242,9 @@ class System:
             self.lines[point_num[0]][point_num[1]].location = target_location
             self.boxes[origin_location.x][origin_location.y].content.remove(point_num)
             self.boxes[target_location.x][target_location.y].content.append(point_num)
+            return 1
+
+        return 0
 
         # print([[origin_location.x,origin_location.y],[target_location.x,target_location.y],rd_energy,energy_d,energy_g,energy_m,direction_1])
 
@@ -251,20 +256,19 @@ class System:
             self.boxes[point.location.x, point.location.y].content.append([len(self.lines), i])
         self.lines.append(aLine)
 
-    def calc_rd(self,line_num):
+    def calc_rd(self, line_num):
         aLine = self.lines[line_num]
         len_aLine = len(aLine)
-        average = hex_coordinate([0,0])
+        average = hex_coordinate([0, 0])
         ave_distance = 0
         for i in aLine:
             average = average + i.location
-        average = hex_coordinate([average.x/len_aLine,average.y/len_aLine])
+        average = hex_coordinate([average.x / len_aLine, average.y / len_aLine])
         for i in aLine:
-            ave_distance = ave_distance + pow(average.distance(i.location),2)
+            ave_distance = ave_distance + pow(average.distance(i.location), 2)
         ave_distance = ave_distance / len_aLine
         ave_distance = math.sqrt(ave_distance)
         return ave_distance
-
 
 
 a = System([20, 20])
@@ -298,11 +302,11 @@ for j in range(1000):
         a.point_motive(a.rdpoint())
 
     cc.append(a.calc_rd(0))
-    print('\r{}'.format(j),end='')
+    print('\r{}'.format(j), end='')
 
     # a.draw_Lines()
     # plt.show()
 
 print(cc)
-plt.plot(range(1000),cc)
+plt.plot(range(1000), cc)
 plt.show()
