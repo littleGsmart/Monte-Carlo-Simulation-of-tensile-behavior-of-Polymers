@@ -211,12 +211,12 @@ class System:
             latter_location = self.lines[point_num[0]][point_num[1] + 1].location
             direction_00 = (origin_location - latter_location).tolist()
             if direction_00 in direction_1:
-                energy_m = Tm
+                energy_m += Tm
         elif point_num[1] == (len(self.lines[point_num[0]]) - 1):
             former_location = self.lines[point_num[0]][point_num[1] - 1].location
             direction_01 = (origin_location - former_location).tolist()
             if direction_01 in direction_1:
-                energy_m = Tm
+                energy_m += Tm
 
         else:
             latter_location = self.lines[point_num[0]][point_num[1] + 1].location
@@ -224,7 +224,7 @@ class System:
             direction_00 = (origin_location - latter_location).tolist()
             direction_01 = (origin_location - former_location).tolist()
             if (direction_00 in direction_1) or (direction_01 in direction_1):
-                energy_m = Tm
+                energy_m += Tm
 
         # energy_d
         if point_num[1] == 0:
