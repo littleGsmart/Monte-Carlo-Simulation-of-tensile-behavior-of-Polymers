@@ -14,6 +14,7 @@ Tg = 263
 Tm = 433
 Td = 583
 T_environment = 400
+n_g_arr = [0, 1, 1e8, 1e8, 1e8, 1e8, 1e8]
 
 
 class hex_coordinate:
@@ -132,7 +133,11 @@ class System:
                     pop_list.append(i)
             around = np.delete(around, pop_list)
             if len(around) == 0:
-                self.lines.append(line)
+                if len(line) == 1:
+                    self.line_generate(DP)
+                    return 2
+                else:
+                    self.lines.append(line)
                 return 1
             point = (line[length - 1].grow(around))
             line.append(point)
@@ -224,17 +229,20 @@ class System:
         # energy_d
         if point_num[1] == 0:
             latter_location = self.lines[point_num[0]][point_num[1] + 1].location
-            d_distance = 0.5 * (pow(target_location.distance(latter_location),2) - pow(origin_location.distance(latter_location),2))
+            d_distance = 0.5 * (pow(target_location.distance(latter_location), 2) - pow(
+                origin_location.distance(latter_location), 2))
             energy_d = d_distance * Td
         elif point_num[1] == (len(self.lines[point_num[0]]) - 1):
             former_location = self.lines[point_num[0]][point_num[1] - 1].location
-            d_distance = 0.5 * (pow(target_location.distance(former_location),2) - pow(origin_location.distance(former_location),2))
+            d_distance = 0.5 * (pow(target_location.distance(former_location), 2) - pow(
+                origin_location.distance(former_location), 2))
             energy_d = d_distance * Td
         else:
             latter_location = self.lines[point_num[0]][point_num[1] + 1].location
             former_location = self.lines[point_num[0]][point_num[1] - 1].location
-            d_distance = 0.5 * (pow(target_location.distance(latter_location),2) - pow(origin_location.distance(
-                latter_location),2) + pow(target_location.distance(former_location),2) - pow(origin_location.distance(former_location),2))
+            d_distance = 0.5 * (pow(target_location.distance(latter_location), 2) - pow(origin_location.distance(
+                latter_location), 2) + pow(target_location.distance(former_location), 2) - pow(
+                origin_location.distance(former_location), 2))
             energy_d = d_distance * Td
 
         blocking_energy = energy_m + energy_d + energy_g
@@ -271,42 +279,63 @@ class System:
         return ave_distance
 
 
-a = System([20, 20])
+if __name__ == '__main__':
+    a = System([500, 500])
 
-# with open("5lines_DP50.pkl", 'rb') as file:
-#     a = pickle.loads(file.read())
+    with open("1681094190.6071975.pkl", 'rb') as file:
+        a = pickle.loads(file.read())
 
-# for i in range(5):
-# #     a.line_generate(50)
-n_g_arr = [0, 1, 1e8, 1e8, 1e8, 1e8, 1e8]
-for i in a.boxes.flatten():
-    i.draw_box()
+    # for i in range(500):
+    #     print(a.line_generate(500))
+    print(len(min(a.lines, key=len)))
 
-a.add_line([[10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
-            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]])
-
-# out_put = open("5lines_DP50.pkl", 'wb')
-# tree_str = pickle.dumps(a)
-# out_put.write(tree_str)
-# out_put.close()
-
-print(a.calc_rd(0))
-a.draw_Lines()
-plt.show()
-cc = []
-for j in range(1000):
     # for i in a.boxes.flatten():
     #     i.draw_box()
 
-    for i in range(10000):
-        a.point_motive(a.rdpoint())
+    # a.add_line([[10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
+    #             [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]])
 
-    cc.append(a.calc_rd(0))
-    print('\r{}'.format(j), end='')
+    # out_put = open("5lines_DP50.pkl", 'wb')
+    # tree_str = pickle.dumps(a)
+    # out_put.write(tree_str)
+    # out_put.close()
 
-    # a.draw_Lines()
-    # plt.show()
+    print(a.calc_rd(0))
+    print(len(a.lines[0]))
+    a.draw_Lines()
+    plt.show()
+    cc = []
+    for i in range(len(a.lines)):
+        cc.append([])
+    for j in range(3000):
+        # for i in a.boxes.flatten():
+        #     i.draw_box()
 
-print(cc)
-plt.plot(range(1000), cc)
-plt.show()
+        for i in range(10000):
+            a.point_motive(a.rdpoint())
+
+        for i in range(len(a.lines)):
+            cc[i].append(a.calc_rd(i))
+
+        print('\r{}'.format(j), end='')
+
+        # a.draw_Lines()
+        # plt.show()
+
+    print(cc)
+    a.draw_Lines()
+    plt.axis('equal')
+    plt.show()
+
+    # if input() == '1':
+    import time
+
+    name = str(time.time()) + '.pkl'
+    out_put = open(name, 'wb')
+    saved_obj = pickle.dumps(a)
+    out_put.write(saved_obj)
+    out_put.close()
+
+    for i in range(len(cc)):
+        plt.plot(range(3000), cc[i])
+    plt.show()
