@@ -280,14 +280,14 @@ class System:
 
 
 if __name__ == '__main__':
-    a = System([500, 500])
+    Sys = System([500, 500])
 
     with open("1681094190.6071975.pkl", 'rb') as file:
-        a = pickle.loads(file.read())
+        Sys = pickle.loads(file.read())
 
     # for i in range(500):
     #     print(a.line_generate(500))
-    print(len(min(a.lines, key=len)))
+    print(len(min(Sys.lines, key=len)))
 
     # for i in a.boxes.flatten():
     #     i.draw_box()
@@ -300,22 +300,22 @@ if __name__ == '__main__':
     # out_put.write(tree_str)
     # out_put.close()
 
-    print(a.calc_rd(0))
-    print(len(a.lines[0]))
-    a.draw_Lines()
+    print(Sys.calc_rd(0))
+    print(len(Sys.lines[0]))
+    Sys.draw_Lines()
     plt.show()
     cc = []
-    for i in range(len(a.lines)):
+    for i in range(len(Sys.lines)):
         cc.append([])
     for j in range(3000):
         # for i in a.boxes.flatten():
         #     i.draw_box()
 
         for i in range(10000):
-            a.point_motive(a.rdpoint())
+            Sys.point_motive(Sys.rdpoint())
 
-        for i in range(len(a.lines)):
-            cc[i].append(a.calc_rd(i))
+        for i in range(len(Sys.lines)):
+            cc[i].append(Sys.calc_rd(i))
 
         print('\r{}'.format(j), end='')
 
@@ -323,7 +323,7 @@ if __name__ == '__main__':
         # plt.show()
 
     print(cc)
-    a.draw_Lines()
+    Sys.draw_Lines()
     plt.axis('equal')
     plt.show()
 
@@ -332,7 +332,7 @@ if __name__ == '__main__':
 
     name = str(time.time()) + '.pkl'
     out_put = open(name, 'wb')
-    saved_obj = pickle.dumps(a)
+    saved_obj = pickle.dumps(Sys)
     out_put.write(saved_obj)
     out_put.close()
 
