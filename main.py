@@ -40,6 +40,8 @@ B_保存均方末端距 = tk.Button(root,text='保存均方末端距', command=�
 B_保存均方末端距.pack(side='top', padx=13, pady=3)
 B_读取均方末端距 = tk.Button(root,text='读取均方末端距', command=读取均方末端距)
 B_读取均方末端距.pack(side='top', padx=13, pady=3)
+# B_停止迭代 = tk.Button(root,text='停止迭代', command=停止迭代)
+# B_停止迭代.pack(side='top', padx=13, pady=3)
 
 
 

@@ -5,6 +5,8 @@ import random as rd
 import json
 import math
 import pickle
+from tqdm import tqdm
+from multiprocessing import Pool
 
 sq3 = np.sqrt(3)
 plt.axis('equal')
@@ -103,7 +105,7 @@ class System:
         self.size = size_arr
         self.boxes = []
         self.lines = []
-        for i in range(size_arr[0]):
+        for i in tqdm(range(size_arr[0])):
             temp = []
             for j in range(size_arr[1]):
                 temp.append(hex_box(hex_coordinate([i, j])))
@@ -150,7 +152,7 @@ class System:
     def draw_Lines(self, line_num='all'):
         draw_shitmontain = np.zeros(self.size)
         if line_num == 'all':
-            for line in self.lines:
+            for line in tqdm(self.lines):
                 X = []
                 Y = []
                 for i in line:
@@ -278,11 +280,16 @@ class System:
         ave_distance = math.sqrt(ave_distance)
         return ave_distance
 
+Sys = System([500, 500])
+
+def cmyf(ii,aSys):
+
+    aSys.point_motive(aSys.rdpoint())
 
 if __name__ == '__main__':
     Sys = System([500, 500])
 
-    with open("1681094190.6071975.pkl", 'rb') as file:
+    with open("500_500_500lines_maxDP500_cystalmethod1_31B.pkl", 'rb') as file:
         Sys = pickle.loads(file.read())
 
     # for i in range(500):
@@ -305,14 +312,24 @@ if __name__ == '__main__':
     Sys.draw_Lines()
     plt.show()
     cc = []
+
+
+
+
+
+    P = Pool(processes=1)
+
     for i in range(len(Sys.lines)):
         cc.append([])
     for j in range(3000):
         # for i in a.boxes.flatten():
         #     i.draw_box()
 
-        for i in range(10000):
-            Sys.point_motive(Sys.rdpoint())
+        # 这里计算很快
+        res = [P.apply_async(func=cmyf, args=(ii,)) for ii in range(60000)]
+
+        # 主要是看这里
+        result = [ii.get(timeout=200) for ii in tqdm(res)]
 
         for i in range(len(Sys.lines)):
             cc[i].append(Sys.calc_rd(i))

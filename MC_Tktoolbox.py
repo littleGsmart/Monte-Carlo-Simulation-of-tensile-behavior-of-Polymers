@@ -4,9 +4,13 @@ import tkinter as tk
 import tkinter.filedialog
 import pickle
 import tkinter.simpledialog
+import time
+from multiprocessing import Pool
+import threading
 
 Sys = System([1, 1])
 record_Rd = 1
+run_or_not = 1
 
 
 def 拉取体系():
@@ -20,7 +24,7 @@ def 绘制体系():
     try:
         draw_box_or_not = msg.askyesno(title='是否需要绘制边框', message='请问是否需要绘制六边形框？')
         if draw_box_or_not:
-            for i in Sys.boxes.flatten():
+            for i in tqdm(Sys.boxes.flatten()):
                 i.draw_box()
         Sys.draw_Lines()
         plt.axis('equal')
@@ -67,18 +71,23 @@ def 创建新体系_2(x, y):
         创建新体系_3(x, y, 0, 0)
 
 
+def 还不太会多线程(DP):
+    Sys.line_generate(int(DP))
+
+
 def 创建新体系_3(x, y, line_num, DP):
     if msg.askyesno(title='是否确定生成模型', message='请问是否确定生成模型？'):
         global Sys
-        try:
-            Sys = System([int(x), int(y)])
-            if line_num == 0:
-                return 0
-            for i in range(int(line_num)):
-                Sys.line_generate(int(DP))
-            msg.showinfo(title='生成已完成', message='模型已生成完成')
-        except:
-            msg.showerror(title='生成失败', message='模型生成失败')
+
+        Sys = System([int(x), int(y)])
+        if line_num == 0:
+            return 0
+        for i in tqdm(range(int(line_num))):
+            还不太会多线程(DP)
+            # th = threading.Thread(target=还不太会多线程, args=(DP,))
+            # th.setDaemon(True)  # 守护线程
+            # th.start()
+        msg.showinfo(title='生成已完成', message='模型已生成完成')
 
 
 def 保存体系():
@@ -94,11 +103,14 @@ def 保存体系():
 
 
 def 开始迭代(轮数, 单轮次数):
-    global record
+    global record, run_or_not
+    run_or_not = 1
     record = []
     for i in range(len(Sys.lines)):
         record.append([])
-    for j in range(轮数):
+
+    print(result)
+    for j in tqdm(range(轮数)):
 
         for i in range(单轮次数):
             Sys.point_motive(Sys.rdpoint())
@@ -107,11 +119,15 @@ def 开始迭代(轮数, 单轮次数):
             for i in range(len(Sys.lines)):
                 record[i].append(Sys.calc_rd(i))
 
-        print('\r{}'.format(j), end='')
+        # if not run_or_not:
+        #     print('函数已停止运行')
+        #     return -1
+
+        # print('\r{}'.format(j), end='')
 
 
 def 绘制均方末端距():
-    for i in record:
+    for i in tqdm(record):
         plt.plot(range(len(i)), i)
     plt.axis('auto')
     plt.show()
@@ -134,3 +150,8 @@ def 读取均方末端距():
     rd_root = tkinter.filedialog.askopenfilename(title="请选择已有模型", filetypes=[('pkl文件', '.pkl')])
     with open(rd_root, 'rb') as file:
         record = pickle.loads(file.read())
+
+#
+# def 停止迭代():
+#     global run_or_not
+#     run_or_not = 0
