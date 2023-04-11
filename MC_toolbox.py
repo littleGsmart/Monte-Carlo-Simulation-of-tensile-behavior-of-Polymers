@@ -180,6 +180,8 @@ class System:
 
     def rdpoint(self):
         i = int(rd.random() * len(self.lines))
+        print(i)
+        print(self.lines)
         j = int(rd.random() * len(self.lines[i]))
         return [i, j]
 
