@@ -1,3 +1,4 @@
+import multiprocessing
 import matplotlib.pyplot as plt
 import numpy as np
 from bisect import bisect_left as bl
@@ -13,7 +14,7 @@ import pickle
 import tkinter.simpledialog
 import time
 import matplotlib
-from multiprocessing import Manager
+import multiprocessing
 import sys
 
 sys.setrecursionlimit(1000000)
@@ -231,15 +232,6 @@ class System:
                     if draw_shitmontain[i.location.x, i.location.y] == 2:
                         x = x - 0.25
                         y = y + 0.15
-                    elif draw_shitmontain[i.location.x, i.location.y] == 3:
-                        x = x + 0.25
-                        y = y - 0.15
-                    elif draw_shitmontain[i.location.x, i.location.y] == 4:
-                        x = x - 0.25
-                        y = y - 0.15
-                    elif draw_shitmontain[i.location.x, i.location.y] == 5:
-                        x = x + 0.25
-                        y = y + 0.15
                     X.append(x)
                     Y.append(y)
                 plt.plot(X, Y, marker='o')
@@ -257,8 +249,11 @@ class System:
                     Y.append(y)
                 plt.plot(X, Y, marker='o')
 
-    def rdpoint(self):
-        i = int(rd.random() * len(self.lines))
+    def rdpoint(self,line_num = 'all'):
+        if line_num == 'all':
+            i = int(rd.random() * len(self.lines))
+        else:
+            i = int(line_num)
         j = int(rd.random() * len(self.lines[i]))
         return [i, j]
 
@@ -360,69 +355,60 @@ class System:
         return ave_distance
 
 
-if __name__ == '__main__':
-    Sys = System([500, 500])
-
-    with open("1681094190.6071975.pkl", 'rb') as file:
-        Sys = pickle.loads(file.read())
-
-    # for i in range(500):
-    #     print(a.line_generate(500))
-    print(len(min(Sys.lines, key=len)))
-
-    # for i in a.boxes.flatten():
-    #     i.draw_box()
-
-    # a.add_line([[10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
-    #             [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]])
-
-    # out_put = open("5lines_DP50.pkl", 'wb')
-    # tree_str = pickle.dumps(a)
-    # out_put.write(tree_str)
-    # out_put.close()
-
-    print(Sys.calc_rd(0))
-    print(len(Sys.lines[0]))
-    Sys.draw_Lines()
-    plt.show()
-    cc = []
-    for i in range(len(Sys.lines)):
-        cc.append([])
-    for j in range(3000):
-        # for i in a.boxes.flatten():
-        #     i.draw_box()
-
-        for i in range(10000):
-            Sys.point_motive(Sys.rdpoint())
-
-        for i in range(len(Sys.lines)):
-            cc[i].append(Sys.calc_rd(i))
-
-        print('\r{}'.format(j), end='')
-
-        # a.draw_Lines()
-        # plt.show()
-
-    print(cc)
-    Sys.draw_Lines()
-    plt.axis('equal')
-    plt.show()
-
-    # if input() == '1':
-    import time
-
-    name = str(time.time()) + '.pkl'
-    out_put = open(name, 'wb')
-    saved_obj = pickle.dumps(Sys)
-    out_put.write(saved_obj)
-    out_put.close()
-
-    for i in range(len(cc)):
-        plt.plot(range(3000), cc[i])
-    plt.show()
-
-
 def change_Te(newTe):
     aTs.T_environment = newTe[0]
     aTs.dTeproll = newTe[1]
     print(aTs.call())
+
+
+# -------------------------------------
+
+
+def myrun(aSys):
+    print('fuckU')
+    aSys.line_generate_DP(30000)
+    # print(aSys.lines[-1])
+    return aSys.lines[-1]
+
+def mydiedai(aSys,line_num):
+    [aSys.point_motive(aSys.rdpoint(line_num)) for i in range(100)]
+    return [line_num,aSys.lines[line_num]]
+
+
+if __name__ == '__main__':
+    multiprocessing.freeze_support()
+    pool = multiprocessing.Pool(12)
+    result = []
+    test_Sys = System([500, 500])
+    test_man_list = multiprocessing.Manager().list()
+    test_man_list.append(test_Sys)
+    for i in range(10):
+        r = pool.apply_async(func=myrun, args=(test_man_list[0],))
+        result.append(r)
+
+    test_Sys.lines = [i.get() for i in result]
+
+    pool.close()
+    pool.join()
+    # test_man_list[0].draw_Lines()
+    test_Sys.draw_Lines()
+    plt.show()
+
+    t11 = time.time()
+    pool2 = multiprocessing.Pool(12)
+    result = []
+
+    for j in range(100):
+        test_man_list[0] = (test_Sys)
+        for i in range(len(test_Sys.lines)):
+            r = pool2.apply_async(func=mydiedai, args=(test_man_list[0],i,))
+            result.append(r)
+
+        test_Sys.lines = [ii[1] for ii in sorted([i.get() for i in result],key=lambda x:x[0])]
+
+    pool.close()
+    pool.join()
+    # test_man_list[0].draw_Lines()
+    test_Sys.draw_Lines()
+    plt.show()
+
