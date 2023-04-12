@@ -27,11 +27,19 @@ CDF = 1
 def 拉取体系():
     global Sys
     Sys_root = tkinter.filedialog.askopenfilename(title="请选择已有模型", filetypes=[('pkl文件', '.pkl')])
-    with open(Sys_root, 'rb') as file:
+    with rich.progress.open(Sys_root, 'rb') as file:
         Sys = pickle.loads(file.read())
+    msg.showinfo(title='读取已完成', message='已读取完成')
 
 
 def 绘制体系():
+    def tohex(list):
+        return hex_coordinate(list)
+    area = [[0,125],[3500,125],[3500,0],[4500,0],[4500,300],[3500,300],[3500,175],[0,175]]
+    hex_arr = []
+    for point in area:
+        hex_arr.append(tohex(point).Transform_2_Ortho())
+    draw_area(hex_arr)
     try:
         draw_box_or_not = msg.askyesno(title='是否需要绘制边框', message='请问是否需要绘制六边形框？')
         if draw_box_or_not:
@@ -90,7 +98,7 @@ def 创建新体系_3(x, y, line_num, DP):
         if line_num == 0:
             return 0
         for i in trange(int(line_num)):
-            Sys.line_generate_DP(int(DP))
+            Sys.line_generate_DP(int(DP),[[0,125],[1000,125],[1000,175],[0,175]])
         msg.showinfo(title='生成已完成', message='模型已生成完成')
         # except:
         #     msg.showerror(title='生成失败', message='模型生成失败')
@@ -106,6 +114,7 @@ def 保存体系():
     saved_obj = pickle.dumps(Sys)
     out_put.write(saved_obj)
     out_put.close()
+    msg.showinfo(title='保存已完成', message='已保存完成')
 
 
 def 开始迭代(轮数, 单轮次数):
@@ -117,7 +126,7 @@ def 开始迭代(轮数, 单轮次数):
         for j in trange(轮数):
 
             for i in range(单轮次数):
-                Sys.point_motive(Sys.rdpoint())
+                Sys.point_motive(Sys.rdpoint(),[[0,125],[3500,125],[3500,0],[4500,0],[4500,300],[3500,300],[3500,175],[0,175]])
 
             if record_Rd:
                 for i in range(len(Sys.lines)):
@@ -175,7 +184,7 @@ def 看看链的蠕动():
             niganma += 1
             for isss in trange(单轮次数):
                 print('\r第{}线程'.format(str(niganma)), end='')
-                Sys.point_motive(Sys.rdpoint())
+                Sys.point_motive(Sys.rdpoint(),[])
             if auto_clean:
                 plt.clf()
             Sys.draw_Lines()

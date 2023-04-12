@@ -15,6 +15,7 @@ import time
 import matplotlib
 from multiprocessing import Manager
 import sys
+import rich.progress
 
 sys.setrecursionlimit(1000000)
 
@@ -25,20 +26,22 @@ with open("dict_600000_10.json", encoding="utf-8") as f:
 Tg = 263
 Tm = 433
 Td = 583
-T_environment = 200
+T_environment = 400
 n_g_arr = [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1., 1e8, 1e8, 1e8]
 dTeproll = 0
+output = 500
 
 
 class Ts:
 
-    def __init__(self, Tg, Tm, Td, T_environment, dTeproll):
+    def __init__(self, Tg, Tm, Td, T_environment, dTeproll, output):
         self.Tg = Tg
         self.Tm = Tm
         self.Td = Td
         self.T_environment = T_environment
         self.dTeproll = dTeproll
+        self.output = output
 
     def call(self):
         return 'self.Tg = {}\nself.Tm = {}\nself.Td = {}\nself.T_environment = {}\nself.dTeproll = {}'.format(self.Tg,
@@ -48,7 +51,7 @@ class Ts:
                                                                                                               self.dTeproll)
 
 
-aTs = Ts(Tg, Tm, Td, T_environment, dTeproll)
+aTs = Ts(Tg, Tm, Td, T_environment, dTeproll, output)
 
 
 class hex_coordinate:
@@ -61,25 +64,16 @@ class hex_coordinate:
         y = self.y * sq3 / 2
         return [x, y]
 
-    def around(self, size):
+    def around(self, area):
         around_loaction = [hex_coordinate([self.x + 1, self.y]), hex_coordinate([self.x - 1, self.y]),
                            hex_coordinate([self.x, self.y + 1]), hex_coordinate([self.x, self.y - 1]),
                            hex_coordinate([self.x + 1, self.y + 1]), hex_coordinate([self.x - 1, self.y - 1])]
-        pop_locate = []
-        if self.x == size[0] - 1:
-            pop_locate.append(0)
-            pop_locate.append(4)
-        if self.x == 0:
-            pop_locate.append(1)
-            pop_locate.append(5)
-        if self.y == size[1] - 1:
-            pop_locate.append(2)
-            pop_locate.append(4)
-        if self.y == 0:
-            pop_locate.append(3)
-            pop_locate.append(5)
 
-        return np.delete(around_loaction, pop_locate).tolist()
+        for point_arr in around_loaction:
+            if not pnpoly(area, point_arr.tolist()):
+                around_loaction.remove(point_arr)
+
+        return around_loaction
 
     def distance(self, other):
         dx = self.x - other.x
@@ -132,68 +126,91 @@ class Kuhn:
         return self.location - other.location
 
 
+def pnpoly(vertices, testp):
+    n = len(vertices)
+    j = n - 1
+    res = False
+    for i in range(n):
+        if (vertices[i][1] > testp[1]) != (vertices[j][1] > testp[1]) and \
+                testp[0] < (vertices[j][0] - vertices[i][0]) * (testp[1] - vertices[i][1]) / (
+                vertices[j][1] - vertices[i][1]) + vertices[i][0]:
+            res = not res
+        j = i
+    return res
+
+
+def draw_area(area):
+    for num in range(len(area) - 1):
+        x = [area[num][0], area[num + 1][0]]
+        y = [area[num][1], area[num + 1][1]]
+        plt.plot(x, y, color='black')
+    x = [area[len(area) - 1][0], area[0][0]]
+    y = [area[len(area) - 1][1], area[0][1]]
+    plt.plot(x, y, color='black')
+
+
 class System:
     def __init__(self, size_arr):
         self.size = size_arr
         self.boxes = []
         self.lines = []
-        for i in range(size_arr[0]):
+        for i in trange(size_arr[0]):
             temp = []
             for j in range(size_arr[1]):
                 temp.append(hex_box(hex_coordinate([i, j])))
             self.boxes.append(temp)
         self.boxes = np.array(self.boxes)
 
-    def random_locate(self):
-        x = int(rd.random() * self.size[0])
-        y = int(rd.random() * self.size[1])
-        return hex_coordinate([x, y])
+    def random_locate(self, myarea):
+        while True:
+            x = int(rd.random() * self.size[0])
+            y = int(rd.random() * self.size[1])
+            if pnpoly(myarea, [x, y]):
+                return hex_coordinate([x, y])
 
-    def line_generate(self, DP):
+    # def line_generate(self, DP):
+    #     length = 0
+    #     line = []
+    #     while not line:
+    #         begin_location = self.random_locate()
+    #         if len(self.boxes[begin_location.x, begin_location.y].content) <= 1:
+    #             line.append(Kuhn(begin_location))
+    #             length = 1
+    #             self.boxes[begin_location.x, begin_location.y].content.append([len(self.lines), 0])
+    #
+    #     while length < DP:
+    #         around = line[length - 1].location.around(self.size)
+    #         pop_list = []
+    #         for i in range(len(around)):
+    #             if len(self.boxes[around[i].x, around[i].y].content) >= 2:
+    #                 pop_list.append(i)
+    #         around = np.delete(around, pop_list)
+    #         if len(around) == 0:
+    #             if len(line) == 1:
+    #                 self.line_generate(DP)
+    #                 return 2
+    #             else:
+    #                 self.lines.append(line)
+    #             return 1
+    #         point = (line[length - 1].grow(around))
+    #         line.append(point)
+    #         self.boxes[point.location.x, point.location.y].content.append([len(self.lines), length])
+    #         length = length + 1
+    #     self.lines.append(line)
+    #
+    #     return 0
+
+    def line_generate_DP(self, DP, mysize):
         length = 0
         line = []
         while not line:
-            begin_location = self.random_locate()
+            begin_location = self.random_locate(mysize)
             if len(self.boxes[begin_location.x, begin_location.y].content) <= 1:
                 line.append(Kuhn(begin_location))
                 length = 1
                 self.boxes[begin_location.x, begin_location.y].content.append([len(self.lines), 0])
 
-        while length < DP:
-            around = line[length - 1].location.around(self.size)
-            pop_list = []
-            for i in range(len(around)):
-                if len(self.boxes[around[i].x, around[i].y].content) >= 2:
-                    pop_list.append(i)
-            around = np.delete(around, pop_list)
-            if len(around) == 0:
-                if len(line) == 1:
-                    self.line_generate(DP)
-                    return 2
-                else:
-                    self.lines.append(line)
-                return 1
-            point = (line[length - 1].grow(around))
-            line.append(point)
-            self.boxes[point.location.x, point.location.y].content.append([len(self.lines), length])
-            length = length + 1
-        self.lines.append(line)
-
-        return 0
-
-    def line_generate_DP(self, DP):
-        length = 0
-        line = []
-        while not line:
-            begin_location = self.random_locate()
-            if len(self.boxes[begin_location.x, begin_location.y].content) <= 1:
-                line.append(Kuhn(begin_location))
-                length = 1
-                self.boxes[begin_location.x, begin_location.y].content.append([len(self.lines), 0])
-            else:
-                print([[begin_location.x, begin_location.y], self.boxes[begin_location.x, begin_location.y].content])
-
-        def next_point(around_arr):
+        def next_point(around_arr, mysize):
             pop_list = []
             for i in range(len(around_arr)):
                 if len(self.boxes[around_arr[i].x, around_arr[i].y].content) >= 2:
@@ -202,17 +219,17 @@ class System:
             if len(pop_around) == 0:
                 next_location = int(rd.random() * len(around_arr))
                 next_location = around_arr[next_location]
-                next_arr = next_location.around(self.size)
+                next_arr = next_location.around(mysize)
                 # print('next')
-                return next_point(next_arr)
+                return next_point(next_arr, mysize)
             else:
                 location = int(rd.random() * len(around_arr))
                 location = around_arr[location]
             return Kuhn(location)
 
-        for length in trange(1, DP):
-            around = line[length - 1].location.around(self.size)
-            point = next_point(around)
+        for length in range(1, DP):
+            around = line[length - 1].location.around(mysize)
+            point = next_point(around, mysize)
             line.append(point)
             self.boxes[point.location.x, point.location.y].content.append([len(self.lines), length])
         self.lines.append(line)
@@ -262,9 +279,9 @@ class System:
         j = int(rd.random() * len(self.lines[i]))
         return [i, j]
 
-    def point_motive(self, point_num):
+    def point_motive(self, point_num, myarea):
         origin_location = self.lines[point_num[0]][point_num[1]].location
-        directions = origin_location.around(self.size)
+        directions = origin_location.around(myarea)
         target_location = directions[int(rd.random() * len(directions))]
         rd_energy = e_dict[0][bl(e_dict[1], rd.random())] * aTs.T_environment
 
@@ -272,7 +289,7 @@ class System:
         # energy_m
         direction_1 = []
         energy_m = 0
-        for i in origin_location.around(self.size):
+        for i in origin_location.around(myarea):
             box = self.boxes[i.x, i.y]
             if box.content:
                 for point in box.content:
@@ -326,12 +343,21 @@ class System:
                 origin_location.distance(former_location), 2))
             energy_d = d_distance * aTs.Td
 
+        # output
+        def potential_ene(x):
+            return aTs.output * min(x, 3500)
+
+        energy_pull = potential_ene(target_location.Transform_2_Ortho()[0]) - potential_ene(origin_location.Transform_2_Ortho()[0])
+
         blocking_energy = energy_m + energy_d + energy_g
-        if rd_energy > blocking_energy:
+        motive_energy = rd_energy + energy_pull
+        if motive_energy > blocking_energy:
             self.lines[point_num[0]][point_num[1]].location = target_location
             self.boxes[origin_location.x][origin_location.y].content.remove(point_num)
             self.boxes[target_location.x][target_location.y].content.append(point_num)
             return 1
+
+
 
         return 0
 
