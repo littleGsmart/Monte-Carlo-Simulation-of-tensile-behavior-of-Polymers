@@ -190,9 +190,6 @@ class System:
                 line.append(Kuhn(begin_location))
                 length = 1
                 self.boxes[begin_location.x, begin_location.y].content.append([len(self.lines), 0])
-            else:
-                print([[begin_location.x, begin_location.y], self.boxes[begin_location.x, begin_location.y].content])
-
         def next_point(around_arr):
             pop_list = []
             for i in range(len(around_arr)):
