@@ -23,6 +23,9 @@ plt.ion()
 auto_clean = 0
 CDF = 1
 
+anArea = [[0,10],[350,10],[350,0],[450,0],[450,50],[350,50],[350,40],[0,40]]
+GenArea = [[0,10],[100,10],[100,40],[0,40]]
+
 
 def 拉取体系():
     global Sys
@@ -35,7 +38,7 @@ def 拉取体系():
 def 绘制体系():
     def tohex(list):
         return hex_coordinate(list)
-    area = [[0,125],[3500,125],[3500,0],[4500,0],[4500,300],[3500,300],[3500,175],[0,175]]
+    area = anArea
     hex_arr = []
     for point in area:
         hex_arr.append(tohex(point).Transform_2_Ortho())
@@ -98,7 +101,7 @@ def 创建新体系_3(x, y, line_num, DP):
         if line_num == 0:
             return 0
         for i in trange(int(line_num)):
-            Sys.line_generate_DP(int(DP),[[0,125],[1000,125],[1000,175],[0,175]])
+            Sys.line_generate_DP(int(DP),GenArea)
         msg.showinfo(title='生成已完成', message='模型已生成完成')
         # except:
         #     msg.showerror(title='生成失败', message='模型生成失败')
@@ -126,7 +129,7 @@ def 开始迭代(轮数, 单轮次数):
         for j in trange(轮数):
 
             for i in range(单轮次数):
-                Sys.point_motive(Sys.rdpoint(),[[0,125],[3500,125],[3500,0],[4500,0],[4500,300],[3500,300],[3500,175],[0,175]])
+                Sys.point_motive(Sys.rdpoint(),anArea)
 
             if record_Rd:
                 for i in range(len(Sys.lines)):
@@ -184,7 +187,7 @@ def 看看链的蠕动():
             niganma += 1
             for isss in trange(单轮次数):
                 print('\r第{}线程'.format(str(niganma)), end='')
-                Sys.point_motive(Sys.rdpoint(),[])
+                Sys.point_motive(Sys.rdpoint(),anArea)
             if auto_clean:
                 plt.clf()
             Sys.draw_Lines()
