@@ -14,6 +14,7 @@ import matplotlib
 import sys
 import rich.progress
 import threading
+import time
 
 sys.setrecursionlimit(1000000)
 
@@ -422,67 +423,6 @@ class System:
                     boundary[2] = min(axis[1], boundary[2])
                     boundary[3] = max(axis[1], boundary[3])
 
-
-if __name__ == '__main__':
-    Sys = System([500, 500])
-
-    with open("1681094190.6071975.pkl", 'rb') as file:
-        Sys = pickle.loads(file.read())
-
-    # for i in range(500):
-    #     print(a.line_generate(500))
-    print(len(min(Sys.lines, key=len)))
-
-    # for i in a.boxes.flatten():
-    #     i.draw_box()
-
-    # a.add_line([[10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
-    #             [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]])
-
-    # out_put = open("5lines_DP50.pkl", 'wb')
-    # tree_str = pickle.dumps(a)
-    # out_put.write(tree_str)
-    # out_put.close()
-
-    print(Sys.calc_rd(0))
-    print(len(Sys.lines[0]))
-    Sys.draw_Lines()
-    plt.show()
-    cc = []
-    for i in range(len(Sys.lines)):
-        cc.append([])
-    for j in range(3000):
-        # for i in a.boxes.flatten():
-        #     i.draw_box()
-
-        for i in range(10000):
-            Sys.point_motive(Sys.rdpoint())
-
-        for i in range(len(Sys.lines)):
-            cc[i].append(Sys.calc_rd(i))
-
-        print('\r{}'.format(j), end='')
-
-        # a.draw_Lines()
-        # plt.show()
-
-    print(cc)
-    Sys.draw_Lines()
-    plt.axis('equal')
-    plt.show()
-
-    # if input() == '1':
-    import time
-
-    name = str(time.time()) + '.pkl'
-    out_put = open(name, 'wb')
-    saved_obj = pickle.dumps(Sys)
-    out_put.write(saved_obj)
-    out_put.close()
-
-    for i in range(len(cc)):
-        plt.plot(range(3000), cc[i])
-    plt.show()
 
 
 def change_Te(newTe):
