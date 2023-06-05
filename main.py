@@ -39,15 +39,16 @@ plt.ion()
 auto_clean = 0
 CDF = 1
 
-box_area = [[0, 125], [3500, 125], [3500, 0], [4500, 0], [4500, 300], [3500, 300], [3500, 175], [0, 175]]
-gen_area = [[0, 125], [1000, 125], [1000, 175], [0, 175]]
+box_area = [[600, 0], [600, 900], [900,900], [900, 0]]
+gen_area = [[600, 0], [600, 900], [900,900], [900, 0]]
+new_sys_size = [900,1500]
 
 
 # 创建一个900,1500的体系
 
 class Ts:
 
-    def __init__(self, Tg, Tm, Td, T_environment, dTeproll, ):
+    def __init__(self, Tg, Tm, Td, T_environment, dTeproll):
         self.Tg = Tg
         self.Tm = Tm
         self.Td = Td
@@ -222,7 +223,11 @@ class System:
     #
     #     return 0
 
-    def line_generate_DP(self, DP, mysize):
+    def line_generate_DP(self, DP, size = 'all'):
+        if size == 'all':
+            mysize = [[0,0],[self.size[0],0],self.size,[0,self.size[1]]]
+        else:
+            mysize = size
         length = 0
         line = []
         while not line:
@@ -301,7 +306,11 @@ class System:
         j = int(rd.random() * len(self.lines[i]))
         return [i, j]
 
-    def point_motive(self, point_num, myarea):
+    def point_motive(self, point_num, area = 'all'):
+        if area == 'all':
+            myarea = [[0,0],[self.size[0],0],self.size,[0,self.size[1]]]
+        else:
+            myarea = area
         origin_location = self.lines[point_num[0]][point_num[1]].location
         directions = origin_location.around(myarea)
         target_location = directions[int(rd.random() * len(directions))]
@@ -414,7 +423,7 @@ class System:
         boundary = []
         for line in self.lines:
             for dot in line:
-                axis = dot.Transform_2_Ortho()
+                axis = dot.location.Transform_2_Ortho()
                 if not boundary:
                     boundary = [axis[0], axis[0], axis[1], axis[1]]
                 else:
@@ -422,7 +431,7 @@ class System:
                     boundary[1] = max(axis[0], boundary[1])
                     boundary[2] = min(axis[1], boundary[2])
                     boundary[3] = max(axis[1], boundary[3])
-
+        return boundary
 
 
 def change_Te(newTe):
@@ -454,14 +463,6 @@ def 拉取体系():
 
 
 def 绘制体系():
-    def tohex(list):
-        return hex_coordinate(list)
-
-    area = box_area
-    hex_arr = []
-    for point in area:
-        hex_arr.append(tohex(point).Transform_2_Ortho())
-    draw_area(hex_arr)
     try:
         draw_box_or_not = msg.askyesno(title='是否需要绘制边框', message='请问是否需要绘制六边形框？')
         if draw_box_or_not:
@@ -475,6 +476,9 @@ def 绘制体系():
 
 
 def 创建新体系():
+    if new_sys_size:
+        创建新体系_2(new_sys_size[0],new_sys_size[1])
+        return 0
     top_1 = tk.Toplevel()
     top_1.title('新模型构建向导')
     top_1.geometry('900x900')
@@ -520,7 +524,7 @@ def 创建新体系_3(x, y, line_num, DP):
         if line_num == 0:
             return 0
         for i in trange(int(line_num)):
-            Sys.line_generate_DP(int(DP), gen_area)
+            Sys.line_generate_DP(int(DP),'all')
         msg.showinfo(title='生成已完成', message='模型已生成完成')
         # except:
         #     msg.showerror(title='生成失败', message='模型生成失败')
@@ -548,7 +552,7 @@ def 开始迭代(轮数, 单轮次数):
         for j in trange(轮数):
 
             for i in range(单轮次数):
-                Sys.point_motive(Sys.rdpoint(), box_area)
+                Sys.point_motive(Sys.rdpoint(), 'all')
 
             if record_Rd:
                 for i in range(len(Sys.lines)):
@@ -671,6 +675,9 @@ def 记录均方末端距():
         record_Rd = 0
         L_当前状态['text'] = '当前状态：不记录均方末端距'
 
+def 测试按钮1():
+    print(Sys.calc_boundary())
+
 
 # -----------以上为MC_Tktoolbox内容-----------------
 
@@ -732,6 +739,8 @@ B_当前温度体系.pack(side='top', padx=13, pady=3)
 B_绘制当前体系分布 = tk.Button(root, text='绘制当前体系分布', command=绘制当前体系分布)
 B_绘制当前体系分布.pack(side='top', padx=13, pady=3)
 
+B_测试按钮1 = tk.Button(root, text='测试按钮1', command=测试按钮1)
+B_测试按钮1.pack(side='top', padx=13, pady=3)
 plt.show()
 
 root.mainloop()
